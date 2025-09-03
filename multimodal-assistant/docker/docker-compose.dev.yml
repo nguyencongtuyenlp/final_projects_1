@@ -1,0 +1,53 @@
+# Development docker-compose with hot reload and debugging
+version: "3.9"
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: builder  # Use builder stage for development
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # Debug port
+    environment:
+      - APP_ENV=development
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../app:/app/app:ro  # Mount source code for hot reload
+      - ../tests:/app/tests:ro
+      - rag_storage_dev:/app/storage/rag
+      - model_cache_dev:/root/.cache/huggingface
+    networks:
+      - multimodal_dev_net
+    command: uvicorn app.server:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+    stdin_open: true
+    tty: true
+
+  # Development database for testing (optional)
+  test_db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=multimodal_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_pass
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - multimodal_dev_net
+    ports:
+      - "5432:5432"
+
+volumes:
+  rag_storage_dev:
+    driver: local
+  model_cache_dev:
+    driver: local
+  postgres_data_dev:
+    driver: local
+
+networks:
+  multimodal_dev_net:
+    driver: bridge

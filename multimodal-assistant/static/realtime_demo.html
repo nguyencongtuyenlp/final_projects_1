@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Real-Time Vision Demo | MultiModal Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .demo-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .demo-panel h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .video-container {
+            position: relative;
+            background: #1a1a1a;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .results {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .result-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-left: 3px solid #3498db;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .result-item.gesture {
+            border-left-color: #e74c3c;
+        }
+
+        .result-item.eye {
+            border-left-color: #f39c12;
+        }
+
+        .result-item.error {
+            border-left-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+            color: #3498db;
+        }
+
+        .stat-card p {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .combined-panel {
+            grid-column: 1 / -1;
+        }
+
+        .processed-image {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+
+        .feature-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-btn {
+            padding: 8px 16px;
+            border: 2px solid #3498db;
+            background: transparent;
+            color: #3498db;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 Real-Time Vision Demo</h1>
+            <p>MultiModal Assistant - Gesture Recognition & Eye Gaze Tracking</p>
+        </div>
+
+        <!-- Camera moved to top for better visibility -->
+        <div class="demo-panel" style="margin-bottom: 30px;">
+            <h2>📹 Camera Feed</h2>
+            <div class="video-container">
+                <video id="videoElement" autoplay muted></video>
+                <div class="video-overlay">
+                    <div id="cameraInfo">Camera: Not Started</div>
+                    <div id="fpsInfo">FPS: -</div>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="startCameraBtn" class="btn btn-primary">Start Camera</button>
+                <button id="stopCameraBtn" class="btn btn-secondary" disabled>Stop Camera</button>
+                <button id="captureBtn" class="btn btn-info" disabled>Capture Frame</button>
+            </div>
+        </div>
+
+        <div class="demo-grid">
+            <!-- Gesture Recognition Panel -->
+            <div class="demo-panel">
+                <h2>🖐️ Hand Gesture Recognition</h2>
+                
+                <div class="status">
+                    <div id="gestureStatus" class="status-indicator"></div>
+                    <span id="gestureStatusText">Disconnected</span>
+                </div>
+
+                <div class="controls">
+                    <button id="startGestureBtn" class="btn btn-primary">Start Gesture</button>
+                    <button id="stopGestureBtn" class="btn btn-secondary" disabled>Stop</button>
+                    <button id="resetGestureBtn" class="btn btn-info">Reset</button>
+                </div>
+
+                <div id="gestureResults" class="results">
+                    <div class="result-item">Ready to detect hand gestures...</div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3 id="handCount">0</h3>
+                        <p>Hands Detected</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="gestureCount">0</h3>
+                        <p>Gestures Processed</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Eye Tracking Panel -->
+            <div class="demo-panel">
+                <h2>👁️ Eye Gaze Tracking</h2>
+                
+                <div class="status">
+                    <div id="eyeStatus" class="status-indicator"></div>
+                    <span id="eyeStatusText">Disconnected</span>
+                </div>
+
+                <div class="controls">
+                    <button id="startEyeBtn" class="btn btn-primary">Start Eye Tracking</button>
+                    <button id="stopEyeBtn" class="btn btn-secondary" disabled>Stop</button>
+                    <button id="resetEyeBtn" class="btn btn-info">Reset</button>
+                </div>
+
+                <div id="eyeResults" class="results">
+                    <div class="result-item">Ready to track eye movement...</div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3 id="blinkCount">0</h3>
+                        <p>Blinks Detected</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="gazeDirection">-</h3>
+                        <p>Gaze Direction</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processed previews & simple toggles (kept minimal) -->
+            <div class="demo-panel combined-panel">
+                <h2>🖼️ Processed Preview</h2>
+                <div class="feature-toggle" style="display:flex; gap:10px;">
+                    <button id="toggleGestures" class="toggle-btn active">Gestures</button>
+                    <button id="toggleEyeTracking" class="toggle-btn active">Eye Tracking</button>
+                </div>
+                <div id="processedImageContainer"></div>
+            </div>
+        </div>
+
+        <!-- Integrated classic features on the same page -->
+        <div class="demo-grid" style="margin-top: 10px;">
+            <div class="demo-panel">
+                <h2>🎤 ASR (Speech → Text)</h2>
+                <div class="controls">
+                    <input type="file" id="asrFile" accept="audio/*" style="background:#fff;color:#000;border-radius:8px;padding:8px;" />
+                    <button id="asrBtn" class="btn btn-primary">Transcribe</button>
+                </div>
+                <div id="asrResult" class="results"><div class="result-item">Upload WAV/MP3 (ưu tiên 16kHz mono)</div></div>
+            </div>
+            <div class="demo-panel">
+                <h2>🗣️ TTS (Text → Speech)</h2>
+                <div class="controls" style="flex-wrap:wrap;">
+                    <input id="ttsText" placeholder="Nhập văn bản để đọc" style="flex:1;min-width:240px;background:#fff;color:#000;border-radius:8px;padding:10px;border:none;" />
+                    <button id="ttsBtn" class="btn btn-primary">Synthesize</button>
+                    <audio id="ttsPlayer" controls style="width:100%;margin-top:10px;display:none;"></audio>
+                </div>
+            </div>
+            <div class="demo-panel">
+                <h2>🧾 OCR & 🖼️ Caption</h2>
+                <div class="controls">
+                    <input type="file" id="imageFile" accept="image/*" style="background:#fff;color:#000;border-radius:8px;padding:8px;" />
+                    <button id="ocrBtn" class="btn btn-primary">OCR</button>
+                    <button id="captionBtn" class="btn btn-info">Caption</button>
+                </div>
+                <div id="ocrCaptionResult" class="results"><div class="result-item">Chọn ảnh để nhận dạng chữ hoặc mô tả ảnh</div></div>
+            </div>
+            <div class="demo-panel">
+                <h2>📚 RAG / QA</h2>
+                <div class="controls" style="flex-wrap:wrap;">
+                    <input type="file" id="ragFiles" multiple style="background:#fff;color:#000;border-radius:8px;padding:8px;" />
+                    <button id="ragUploadBtn" class="btn btn-info">Upload Docs</button>
+                </div>
+                <div class="controls" style="flex-wrap:wrap;">
+                    <input id="ragQuestion" placeholder="Câu hỏi..." style="flex:1;min-width:240px;background:#fff;color:#000;border-radius:8px;padding:10px;border:none;" />
+                    <button id="ragAskBtn" class="btn btn-primary">Ask</button>
+                </div>
+                <div id="ragResult" class="results"><div class="result-item">Upload tài liệu rồi hỏi để nhận câu trả lời trích dẫn</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RealTimeVisionDemo {
+            constructor() {
+                this.videoElement = document.getElementById('videoElement');
+                this.canvas = document.createElement('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                // WebSocket connections
+                this.gestureWS = null;
+                this.eyeWS = null;
+                this.combinedWS = null;
+                
+                // Camera stream
+                this.stream = null;
+                this.isCapturing = false;
+                
+                // Statistics
+                this.stats = {
+                    gestureCount: 0,
+                    handCount: 0,
+                    blinkCount: 0,
+                    gazeDirection: '-'
+                };
+                
+                // Frame rate tracking
+                this.lastFrameTime = 0;
+                this.fps = 0;
+                
+                // Active features
+                this.activeFeatures = ['gestures', 'eye_tracking'];
+                
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                // Camera controls
+                document.getElementById('startCameraBtn').addEventListener('click', () => this.startCamera());
+                document.getElementById('stopCameraBtn').addEventListener('click', () => this.stopCamera());
+                document.getElementById('captureBtn').addEventListener('click', () => this.captureFrame());
+
+                // Gesture controls
+                document.getElementById('startGestureBtn').addEventListener('click', () => this.startGestureTracking());
+                document.getElementById('stopGestureBtn').addEventListener('click', () => this.stopGestureTracking());
+                document.getElementById('resetGestureBtn').addEventListener('click', () => this.resetGestureStats());
+
+                // Eye tracking controls
+                document.getElementById('startEyeBtn').addEventListener('click', () => this.startEyeTracking());
+                document.getElementById('stopEyeBtn').addEventListener('click', () => this.stopEyeTracking());
+                document.getElementById('resetEyeBtn').addEventListener('click', () => this.resetEyeStats());
+
+                // Feature toggles
+                document.getElementById('toggleGestures').addEventListener('click', () => this.toggleFeature('gestures'));
+                document.getElementById('toggleEyeTracking').addEventListener('click', () => this.toggleFeature('eye_tracking'));
+            }
+
+            async startCamera() {
+                try {
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: { 
+                            width: 640, 
+                            height: 480,
+                            facingMode: 'user'
+                        }
+                    });
+                    
+                    this.videoElement.srcObject = this.stream;
+                    
+                    document.getElementById('startCameraBtn').disabled = true;
+                    document.getElementById('stopCameraBtn').disabled = false;
+                    document.getElementById('captureBtn').disabled = false;
+                    
+                    document.getElementById('cameraInfo').textContent = 'Camera: Active';
+                    
+                    // Start frame capture loop
+                    this.startFrameCapture();
+                    
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    alert('Error accessing camera: ' + error.message);
+                }
+            }
+
+            stopCamera() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                
+                this.isCapturing = false;
+                
+                document.getElementById('startCameraBtn').disabled = false;
+                document.getElementById('stopCameraBtn').disabled = true;
+                document.getElementById('captureBtn').disabled = true;
+                
+                document.getElementById('cameraInfo').textContent = 'Camera: Stopped';
+                document.getElementById('fpsInfo').textContent = 'FPS: -';
+            }
+
+            startFrameCapture() {
+                this.isCapturing = true;
+                this.captureLoop();
+            }
+
+            captureLoop() {
+                if (!this.isCapturing) return;
+
+                const currentTime = performance.now();
+                if (currentTime - this.lastFrameTime >= 100) { // 10 FPS
+                    this.captureFrame();
+                    this.lastFrameTime = currentTime;
+                    
+                    // Calculate FPS
+                    this.fps = Math.round(1000 / (currentTime - this.lastFrameTime + 100));
+                    document.getElementById('fpsInfo').textContent = `FPS: ${this.fps}`;
+                }
+
+                if (this.isCapturing) {
+                    requestAnimationFrame(() => this.captureLoop());
+                }
+            }
+
+            captureFrame() {
+                if (!this.videoElement.videoWidth) return;
+
+                // Set canvas size to match video
+                this.canvas.width = this.videoElement.videoWidth;
+                this.canvas.height = this.videoElement.videoHeight;
+
+                // Draw video frame to canvas
+                this.ctx.drawImage(this.videoElement, 0, 0);
+
+                // Convert to base64
+                const imageData = this.canvas.toDataURL('image/jpeg', 0.8);
+
+                // Send to active WebSocket connections
+                if (this.gestureWS && this.gestureWS.readyState === WebSocket.OPEN) {
+                    this.gestureWS.send(JSON.stringify({
+                        type: 'image',
+                        data: imageData
+                    }));
+                }
+
+                if (this.eyeWS && this.eyeWS.readyState === WebSocket.OPEN) {
+                    this.eyeWS.send(JSON.stringify({
+                        type: 'image',
+                        data: imageData
+                    }));
+                }
+            }
+
+            startGestureTracking() {
+                const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
+                const wsUrl = `${wsScheme}://${location.host}/v1/realtime/gesture`;
+                this.gestureWS = new WebSocket(wsUrl);
+
+                this.gestureWS.onopen = () => {
+                    document.getElementById('gestureStatus').classList.add('connected');
+                    document.getElementById('gestureStatusText').textContent = 'Connected';
+                    document.getElementById('startGestureBtn').disabled = true;
+                    document.getElementById('stopGestureBtn').disabled = false;
+                };
+
+                this.gestureWS.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    this.handleGestureResult(data);
+                };
+
+                this.gestureWS.onerror = (error) => {
+                    console.error('Gesture WebSocket error:', error);
+                    this.addResult('gestureResults', 'Connection error', 'error');
+                };
+
+                this.gestureWS.onclose = () => {
+                    document.getElementById('gestureStatus').classList.remove('connected');
+                    document.getElementById('gestureStatusText').textContent = 'Disconnected';
+                    document.getElementById('startGestureBtn').disabled = false;
+                    document.getElementById('stopGestureBtn').disabled = true;
+                };
+            }
+
+            stopGestureTracking() {
+                if (this.gestureWS) {
+                    this.gestureWS.close();
+                    this.gestureWS = null;
+                }
+            }
+
+            startEyeTracking() {
+                const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
+                const wsUrl = `${wsScheme}://${location.host}/v1/realtime/eyetracking`;
+                this.eyeWS = new WebSocket(wsUrl);
+
+                this.eyeWS.onopen = () => {
+                    document.getElementById('eyeStatus').classList.add('connected');
+                    document.getElementById('eyeStatusText').textContent = 'Connected';
+                    document.getElementById('startEyeBtn').disabled = true;
+                    document.getElementById('stopEyeBtn').disabled = false;
+                };
+
+                this.eyeWS.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    this.handleEyeResult(data);
+                };
+
+                this.eyeWS.onerror = (error) => {
+                    console.error('Eye tracking WebSocket error:', error);
+                    this.addResult('eyeResults', 'Connection error', 'error');
+                };
+
+                this.eyeWS.onclose = () => {
+                    document.getElementById('eyeStatus').classList.remove('connected');
+                    document.getElementById('eyeStatusText').textContent = 'Disconnected';
+                    document.getElementById('startEyeBtn').disabled = false;
+                    document.getElementById('stopEyeBtn').disabled = true;
+                };
+            }
+
+            stopEyeTracking() {
+                if (this.eyeWS) {
+                    this.eyeWS.close();
+                    this.eyeWS = null;
+                }
+            }
+
+            handleGestureResult(data) {
+                if (data.type === 'gesture_recognition') {
+                    this.stats.gestureCount++;
+                    this.stats.handCount = data.hand_count || 0;
+                    
+                    const dominantGesture = data.dominant_gesture || 'Unknown';
+                    const confidence = data.gestures && data.gestures[0] ? data.gestures[0].confidence : 0;
+                    
+                    this.addResult('gestureResults', 
+                        `${dominantGesture} (${(confidence * 100).toFixed(1)}%) - ${data.hand_count} hands`, 
+                        'gesture');
+                    
+                    // Update stats display
+                    document.getElementById('handCount').textContent = this.stats.handCount;
+                    document.getElementById('gestureCount').textContent = this.stats.gestureCount;
+                    
+                    // Show processed image if available
+                    if (data.processed_image) {
+                        this.showProcessedImage(data.processed_image, 'Gesture Recognition');
+                    }
+                } else if (data.type === 'connection') {
+                    this.addResult('gestureResults', data.message, 'info');
+                } else if (data.error) {
+                    this.addResult('gestureResults', `Error: ${data.error}`, 'error');
+                }
+            }
+
+            handleEyeResult(data) {
+                if (data.type === 'eye_tracking') {
+                    const gaze = data.gaze_data;
+                    
+                    if (gaze.face_detected) {
+                        const mainGaze = gaze.left_gaze === gaze.right_gaze ? gaze.left_gaze : 'Mixed';
+                        this.stats.gazeDirection = mainGaze;
+                        this.stats.blinkCount = gaze.total_blinks || 0;
+                        
+                        const blinkStatus = gaze.blink_detected ? '👁️ BLINK' : '👀 Open';
+                        const earInfo = `EAR: L=${gaze.ear_left?.toFixed(3)} R=${gaze.ear_right?.toFixed(3)}`;
+                        
+                        this.addResult('eyeResults', 
+                            `${mainGaze} | ${blinkStatus} | ${earInfo}`, 
+                            'eye');
+                        
+                        // Update stats display
+                        document.getElementById('blinkCount').textContent = this.stats.blinkCount;
+                        document.getElementById('gazeDirection').textContent = this.stats.gazeDirection;
+                        
+                        // Show processed image if available
+                        if (data.processed_image) {
+                            this.showProcessedImage(data.processed_image, 'Eye Tracking');
+                        }
+                    } else {
+                        this.addResult('eyeResults', 'No face detected', 'info');
+                    }
+                } else if (data.type === 'connection') {
+                    this.addResult('eyeResults', data.message, 'info');
+                } else if (data.error) {
+                    this.addResult('eyeResults', `Error: ${data.error}`, 'error');
+                }
+            }
+
+            showProcessedImage(base64Image, title) {
+                const container = document.getElementById('processedImageContainer');
+                
+                // Remove old images (keep only last 2)
+                while (container.children.length >= 2) {
+                    container.removeChild(container.firstChild);
+                }
+                
+                const imageDiv = document.createElement('div');
+                imageDiv.style.display = 'inline-block';
+                imageDiv.style.margin = '10px';
+                imageDiv.style.textAlign = 'center';
+                
+                const img = document.createElement('img');
+                img.src = base64Image;
+                img.className = 'processed-image';
+                img.style.maxWidth = '300px';
+                
+                const caption = document.createElement('p');
+                caption.textContent = title;
+                caption.style.marginTop = '5px';
+                caption.style.fontSize = '0.9em';
+                
+                imageDiv.appendChild(img);
+                imageDiv.appendChild(caption);
+                container.appendChild(imageDiv);
+            }
+
+            addResult(containerId, message, type = 'info') {
+                const container = document.getElementById(containerId);
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `result-item ${type}`;
+                resultDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                
+                container.appendChild(resultDiv);
+                container.scrollTop = container.scrollHeight;
+                
+                // Keep only last 10 results
+                while (container.children.length > 10) {
+                    container.removeChild(container.firstChild);
+                }
+            }
+
+            resetGestureStats() {
+                this.stats.gestureCount = 0;
+                this.stats.handCount = 0;
+                document.getElementById('handCount').textContent = '0';
+                document.getElementById('gestureCount').textContent = '0';
+                document.getElementById('gestureResults').innerHTML = '<div class="result-item">Statistics reset</div>';
+                
+                if (this.gestureWS && this.gestureWS.readyState === WebSocket.OPEN) {
+                    this.gestureWS.send(JSON.stringify({ type: 'reset' }));
+                }
+            }
+
+            resetEyeStats() {
+                this.stats.blinkCount = 0;
+                this.stats.gazeDirection = '-';
+                document.getElementById('blinkCount').textContent = '0';
+                document.getElementById('gazeDirection').textContent = '-';
+                document.getElementById('eyeResults').innerHTML = '<div class="result-item">Statistics reset</div>';
+                
+                if (this.eyeWS && this.eyeWS.readyState === WebSocket.OPEN) {
+                    this.eyeWS.send(JSON.stringify({ type: 'reset' }));
+                }
+            }
+
+            toggleFeature(feature) {
+                const btn = document.getElementById(feature === 'gestures' ? 'toggleGestures' : 'toggleEyeTracking');
+                
+                if (this.activeFeatures.includes(feature)) {
+                    this.activeFeatures = this.activeFeatures.filter(f => f !== feature);
+                    btn.classList.remove('active');
+                } else {
+                    this.activeFeatures.push(feature);
+                    btn.classList.add('active');
+                }
+            }
+        }
+
+        // Initialize demo when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new RealTimeVisionDemo();
+
+            // ASR
+            document.getElementById('asrBtn').addEventListener('click', async () => {
+                const file = document.getElementById('asrFile').files[0];
+                if (!file) return alert('Chọn file audio trước');
+                const fd = new FormData();
+                fd.append('audio', file);
+                const res = await fetch('/v1/audio/asr', { method: 'POST', body: fd });
+                const json = await res.json();
+                const box = document.getElementById('asrResult');
+                box.innerHTML = '';
+                box.insertAdjacentHTML('beforeend', `<div class="result-item">${json.ok ? (json.text || JSON.stringify(json.result)) : 'Error: ' + json.error}</div>`);
+            });
+
+            // TTS
+            document.getElementById('ttsBtn').addEventListener('click', async () => {
+                const text = document.getElementById('ttsText').value.trim();
+                if (!text) return alert('Nhập văn bản');
+                const res = await fetch('/v1/audio/tts', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ text }) });
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const player = document.getElementById('ttsPlayer');
+                player.src = url; player.style.display = 'block'; player.play();
+            });
+
+            // OCR & Caption via /v1/multimodal/analyze
+            const analyze = async (tasks, textOverride) => {
+                const file = document.getElementById('imageFile').files[0];
+                if (!file) return alert('Chọn ảnh trước');
+                const fd = new FormData();
+                fd.append('tasks', JSON.stringify(tasks));
+                if (textOverride) fd.append('text', textOverride);
+                fd.append('image', file);
+                const res = await fetch('/v1/multimodal/analyze', { method: 'POST', body: fd });
+                const json = await res.json();
+                const box = document.getElementById('ocrCaptionResult');
+                box.innerHTML = '';
+                box.insertAdjacentHTML('beforeend', `<div class="result-item">${json.ok ? JSON.stringify(json.result) : 'Error: ' + json.error}</div>`);
+            };
+            document.getElementById('ocrBtn').addEventListener('click', () => analyze(['ocr']));
+            document.getElementById('captionBtn').addEventListener('click', () => analyze(['caption']));
+
+            // RAG
+            document.getElementById('ragUploadBtn').addEventListener('click', async () => {
+                const files = document.getElementById('ragFiles').files;
+                if (!files.length) return alert('Chọn file để upload');
+                const fd = new FormData();
+                Array.from(files).forEach(f => fd.append('files', f));
+                const res = await fetch('/v1/rag/upload', { method: 'POST', body: fd });
+                const json = await res.json();
+                const box = document.getElementById('ragResult');
+                box.innerHTML = '';
+                box.insertAdjacentHTML('beforeend', `<div class="result-item">${json.ok ? 'Uploaded. Chunks: ' + json.chunks_added : 'Error: ' + json.error}</div>`);
+            });
+            document.getElementById('ragAskBtn').addEventListener('click', async () => {
+                const q = document.getElementById('ragQuestion').value.trim();
+                if (!q) return alert('Nhập câu hỏi');
+                const res = await fetch('/v1/rag/query', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ question: q, top_k: '3' }) });
+                const json = await res.json();
+                const box = document.getElementById('ragResult');
+                box.innerHTML = '';
+                box.insertAdjacentHTML('beforeend', `<div class="result-item">${json.ok ? JSON.stringify(json.result) : 'Error: ' + json.error}</div>`);
+            });
+        });
+    </script>
+</body>
+</html>

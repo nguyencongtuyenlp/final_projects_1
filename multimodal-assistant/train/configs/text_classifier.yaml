@@ -1,0 +1,13 @@
+seed: 42
+trainer:
+  max_epochs: 1
+  accelerator: auto
+  devices: auto
+data:
+  batch_size: 16
+  num_workers: 2
+model:
+  hf_model: distilbert-base-uncased
+  num_labels: 2
+optim:
+  lr: 3e-5

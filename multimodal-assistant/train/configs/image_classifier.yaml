@@ -1,0 +1,13 @@
+seed: 42
+trainer:
+  max_epochs: 1
+  accelerator: auto
+  devices: auto
+data:
+  batch_size: 64
+  num_workers: 2
+model:
+  backbone: resnet18
+  num_classes: 10
+optim:
+  lr: 3e-4
